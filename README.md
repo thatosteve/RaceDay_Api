@@ -234,7 +234,9 @@ The only difference in object type is that the SQL script uses `UNIQUE` constrai
 
 Workflow: `.github/workflows/dotnet.yml` (restore, build, and test on every push).
 
-**CI screenshot:** _add your green build screenshot here._
+**CI screenshot:** 
+<img width="1920" height="1008" alt="image" src="https://github.com/user-attachments/assets/c2af8e54-dce6-4e70-bbf4-e09a220e0e70" />
+
 
 ## Video walkthrough
 
