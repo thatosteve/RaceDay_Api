@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Auth;
 using RaceDay.Api.Data;
@@ -50,11 +50,21 @@ namespace RaceDay.Api.Controllers
         [RoleAuthorize("Participant")]
         public async Task<IActionResult> MyEnrolments()
         {
+            var userId = CurrentUserId;
             var list = await _db.Enrolments
-                .Include(e => e.Event)
-                .Include(e => e.Category)
-                .Include(e => e.Result)
-                .Where(e => e.UserId == CurrentUserId)
+                .Where(e => e.UserId == userId)
+                .OrderBy(e => e.Event.EventDate)
+                .Select(e => new
+                {
+                    e.EnrolmentId,
+                    e.EventId,
+                    EventName = e.Event.Name,
+                    EventDate = e.Event.EventDate,
+                    e.CategoryId,
+                    CategoryName = e.Category.Name,
+                    e.Status,
+                    e.EnrolledAt
+                })
                 .ToListAsync();
 
             return Ok(list);
@@ -67,13 +77,25 @@ namespace RaceDay.Api.Controllers
         {
             var ev = await _db.Events.FirstOrDefaultAsync(e => e.EventId == eventId);
             if (ev == null) return NotFound();
-            if (ev.OrganiserId != CurrentUserId) return Forbid();
+            if (ev.OrganiserId != CurrentUserId) return StatusCode(403, new { message = "You do not own this resource." });
 
+            // Projection (not entities) so password hashes are never returned
             var list = await _db.Enrolments
-                .Include(e => e.User)
-                .Include(e => e.Category)
-                .Include(e => e.Result)
                 .Where(e => e.EventId == eventId)
+                .OrderBy(e => e.EnrolledAt)
+                .Select(e => new
+                {
+                    e.EnrolmentId,
+                    e.Status,
+                    e.EnrolledAt,
+                    ParticipantId = e.UserId,
+                    ParticipantName = e.User.FirstName + " " + e.User.LastName,
+                    ParticipantEmail = e.User.Email,
+                    e.CategoryId,
+                    CategoryName = e.Category.Name,
+                    FinishTime = e.Result != null ? e.Result.FinishTime : null,
+                    FinishPosition = e.Result != null ? e.Result.FinishPosition : null
+                })
                 .ToListAsync();
 
             return Ok(list);
@@ -92,7 +114,7 @@ namespace RaceDay.Api.Controllers
                 .FirstOrDefaultAsync(e => e.EnrolmentId == id);
 
             if (enrolment == null) return NotFound();
-            if (enrolment.Event.OrganiserId != CurrentUserId) return Forbid();
+            if (enrolment.Event.OrganiserId != CurrentUserId) return StatusCode(403, new { message = "You do not own this resource." });
 
             enrolment.Status = dto.Status;
             await _db.SaveChangesAsync();

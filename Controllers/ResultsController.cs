@@ -25,7 +25,7 @@ namespace RaceDay.Api.Controllers
                 .FirstOrDefaultAsync(e => e.EnrolmentId == enrolmentId);
 
             if (enrolment == null) return NotFound();
-            if (enrolment.Event.OrganiserId != CurrentUserId) return Forbid();
+            if (enrolment.Event.OrganiserId != CurrentUserId) return StatusCode(403, new { message = "You do not own this resource." });
 
             if (await _db.Results.AnyAsync(r => r.EnrolmentId == enrolmentId))
                 return Conflict(new { message = "Result already captured." });
@@ -52,7 +52,7 @@ namespace RaceDay.Api.Controllers
                 .FirstOrDefaultAsync(r => r.ResultId == id);
 
             if (result == null) return NotFound();
-            if (result.Enrolment.Event.OrganiserId != CurrentUserId) return Forbid();
+            if (result.Enrolment.Event.OrganiserId != CurrentUserId) return StatusCode(403, new { message = "You do not own this resource." });
 
             result.FinishTime = dto.FinishTime;
             result.FinishPosition = dto.FinishPosition;

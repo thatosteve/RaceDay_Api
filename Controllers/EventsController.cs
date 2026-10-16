@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Auth;
 using RaceDay.Api.Data;
@@ -18,6 +18,7 @@ namespace RaceDay.Api.Controllers
 
         // GET /api/events
         [HttpGet]
+        [SessionAuthorize]
         public async Task<IActionResult> GetAll([FromQuery] string? type, [FromQuery] DateTime? date)
         {
             var query = _db.Events
@@ -36,11 +37,11 @@ namespace RaceDay.Api.Controllers
 
         // GET /api/events/{id}
         [HttpGet("{id:int}")]
+        [SessionAuthorize]
         public async Task<IActionResult> GetById(int id)
         {
             var ev = await _db.Events
                 .Include(e => e.Categories)
-                .Include(e => e.Organiser)
                 .FirstOrDefaultAsync(e => e.EventId == id);
 
             if (ev == null) return NotFound();
@@ -79,7 +80,7 @@ namespace RaceDay.Api.Controllers
         {
             var ev = await _db.Events.FirstOrDefaultAsync(e => e.EventId == id);
             if (ev == null) return NotFound();
-            if (ev.OrganiserId != CurrentUserId) return Forbid();
+            if (ev.OrganiserId != CurrentUserId) return StatusCode(403, new { message = "You do not own this resource." });
 
             if (!new[] { "run", "walk", "cycle" }.Contains(dto.EventType.ToLower()))
                 return BadRequest(new { message = "EventType must be run, walk, or cycle." });
@@ -100,10 +101,18 @@ namespace RaceDay.Api.Controllers
         [RoleAuthorize("Organiser")]
         public async Task<IActionResult> Delete(int id)
         {
-            var ev = await _db.Events.FirstOrDefaultAsync(e => e.EventId == id);
+            var ev = await _db.Events
+                .Include(e => e.Categories)
+                .Include(e => e.Enrolments).ThenInclude(en => en.Result)
+                .FirstOrDefaultAsync(e => e.EventId == id);
             if (ev == null) return NotFound();
-            if (ev.OrganiserId != CurrentUserId) return Forbid();
+            if (ev.OrganiserId != CurrentUserId) return StatusCode(403, new { message = "You do not own this resource." });
 
+            // Foreign keys are RESTRICT, so remove the dependants first (results -> enrolments -> categories -> event)
+            foreach (var en in ev.Enrolments)
+                if (en.Result != null) _db.Results.Remove(en.Result);
+            _db.Enrolments.RemoveRange(ev.Enrolments);
+            _db.Categories.RemoveRange(ev.Categories);
             _db.Events.Remove(ev);
             await _db.SaveChangesAsync();
             return NoContent();
@@ -116,7 +125,7 @@ namespace RaceDay.Api.Controllers
         {
             var ev = await _db.Events.FirstOrDefaultAsync(e => e.EventId == id);
             if (ev == null) return NotFound();
-            if (ev.OrganiserId != CurrentUserId) return Forbid();
+            if (ev.OrganiserId != CurrentUserId) return StatusCode(403, new { message = "You do not own this resource." });
 
             // Part 3 will implement Azure Blob upload here.
             return Ok(new { message = "Banner endpoint reserved for Part 3." });

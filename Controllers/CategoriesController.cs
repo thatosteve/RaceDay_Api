@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Auth;
 using RaceDay.Api.Data;
@@ -17,6 +17,7 @@ namespace RaceDay.Api.Controllers
 
         // GET /api/events/{eventId}/categories
         [HttpGet("api/events/{eventId:int}/categories")]
+        [SessionAuthorize]
         public async Task<IActionResult> GetForEvent(int eventId)
         {
             if (!await _db.Events.AnyAsync(e => e.EventId == eventId))
@@ -36,7 +37,7 @@ namespace RaceDay.Api.Controllers
         {
             var ev = await _db.Events.FirstOrDefaultAsync(e => e.EventId == eventId);
             if (ev == null) return NotFound();
-            if (ev.OrganiserId != CurrentUserId) return Forbid();
+            if (ev.OrganiserId != CurrentUserId) return StatusCode(403, new { message = "You do not own this resource." });
 
             if (dto.CategoryType != "Age" && dto.CategoryType != "Distance")
                 return BadRequest(new { message = "CategoryType must be Age or Distance." });
@@ -63,7 +64,7 @@ namespace RaceDay.Api.Controllers
                 .FirstOrDefaultAsync(c => c.CategoryId == id);
 
             if (cat == null) return NotFound();
-            if (cat.Event.OrganiserId != CurrentUserId) return Forbid();
+            if (cat.Event.OrganiserId != CurrentUserId) return StatusCode(403, new { message = "You do not own this resource." });
 
             if (dto.CategoryType != "Age" && dto.CategoryType != "Distance")
                 return BadRequest(new { message = "CategoryType must be Age or Distance." });
@@ -84,7 +85,10 @@ namespace RaceDay.Api.Controllers
                 .FirstOrDefaultAsync(c => c.CategoryId == id);
 
             if (cat == null) return NotFound();
-            if (cat.Event.OrganiserId != CurrentUserId) return Forbid();
+            if (cat.Event.OrganiserId != CurrentUserId) return StatusCode(403, new { message = "You do not own this resource." });
+
+            if (await _db.Enrolments.AnyAsync(e => e.CategoryId == id))
+                return Conflict(new { message = "This category has enrolments and cannot be deleted." });
 
             _db.Categories.Remove(cat);
             await _db.SaveChangesAsync();

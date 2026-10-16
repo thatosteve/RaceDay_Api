@@ -12,7 +12,7 @@ using RaceDay.Api.Data;
 namespace RaceDay_Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261016095146_InitialCreate")]
+    [Migration("20261016145022_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -29,177 +29,213 @@ namespace RaceDay_Api.Migrations
                 {
                     b.Property<int>("CategoryId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("category_id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CategoryId"));
 
                     b.Property<string>("CategoryType")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("category_type");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime")
+                        .HasColumnName("created_at")
                         .HasDefaultValueSql("GETDATE()");
 
                     b.Property<int>("EventId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("event_id");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("name");
 
-                    b.HasKey("CategoryId");
+                    b.HasKey("CategoryId")
+                        .HasName("PK_CATEGORIES");
 
                     b.HasIndex("EventId");
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("CATEGORIES", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_CATEGORIES_TYPE", "category_type IN ('Age', 'Distance')");
+                        });
                 });
 
             modelBuilder.Entity("RaceDay.Api.Models.Enrolment", b =>
                 {
                     b.Property<int>("EnrolmentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("enrolment_id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EnrolmentId"));
 
                     b.Property<int>("CategoryId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("category_id");
 
                     b.Property<DateTime>("EnrolledAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime")
+                        .HasColumnName("enrolled_at")
                         .HasDefaultValueSql("GETDATE()");
 
                     b.Property<int>("EventId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("event_id");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
-                        .HasDefaultValue("Pending");
+                        .HasColumnType("varchar(20)")
+                        .HasDefaultValue("Pending")
+                        .HasColumnName("status");
 
                     b.Property<int>("UserId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
 
-                    b.HasKey("EnrolmentId");
+                    b.HasKey("EnrolmentId")
+                        .HasName("PK_ENROLMENTS");
 
                     b.HasIndex("CategoryId");
 
                     b.HasIndex("EventId");
 
                     b.HasIndex("UserId", "EventId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_ENROLMENTS");
 
-                    b.ToTable("Enrolments", (string)null);
+                    b.ToTable("ENROLMENTS", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ENROLMENTS_STATUS", "status IN ('Pending', 'Confirmed')");
+                        });
                 });
 
             modelBuilder.Entity("RaceDay.Api.Models.Event", b =>
                 {
                     b.Property<int>("EventId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("event_id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EventId"));
 
                     b.Property<string>("BannerImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("banner_image_url");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime")
+                        .HasColumnName("created_at")
                         .HasDefaultValueSql("GETDATE()");
 
                     b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("varchar(1000)")
+                        .HasColumnName("description");
 
                     b.Property<decimal?>("DistanceKm")
-                        .HasColumnType("decimal(6,2)");
+                        .HasColumnType("decimal(6,2)")
+                        .HasColumnName("distance_km");
 
                     b.Property<DateTime>("EventDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime")
+                        .HasColumnName("event_date");
 
                     b.Property<string>("EventType")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasColumnType("varchar(10)")
+                        .HasColumnName("event_type");
 
                     b.Property<string>("Location")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("varchar(200)")
+                        .HasColumnName("location");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("varchar(150)")
+                        .HasColumnName("name");
 
                     b.Property<int>("OrganiserId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("organiser_id");
 
-                    b.HasKey("EventId");
+                    b.HasKey("EventId")
+                        .HasName("PK_EVENTS");
 
                     b.HasIndex("OrganiserId");
 
-                    b.ToTable("Events", (string)null);
+                    b.ToTable("EVENTS", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_EVENTS_TYPE", "event_type IN ('run', 'walk', 'cycle')");
+                        });
                 });
 
             modelBuilder.Entity("RaceDay.Api.Models.Result", b =>
                 {
                     b.Property<int>("ResultId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("result_id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ResultId"));
 
                     b.Property<int>("EnrolmentId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("enrolment_id");
 
                     b.Property<int?>("FinishPosition")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("finish_position");
 
                     b.Property<TimeSpan?>("FinishTime")
-                        .HasColumnType("time");
+                        .HasColumnType("time")
+                        .HasColumnName("finish_time");
 
                     b.Property<DateTime>("RecordedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime")
+                        .HasColumnName("recorded_at")
                         .HasDefaultValueSql("GETDATE()");
 
-                    b.HasKey("ResultId");
+                    b.HasKey("ResultId")
+                        .HasName("PK_RESULTS");
 
                     b.HasIndex("EnrolmentId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_RESULTS_enrolment_id");
 
-                    b.ToTable("Results", (string)null);
+                    b.ToTable("RESULTS", (string)null);
                 });
 
             modelBuilder.Entity("RaceDay.Api.Models.Role", b =>
                 {
                     b.Property<int>("RoleId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("role_id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RoleId"));
 
                     b.Property<string>("RoleName")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("role_name");
 
-                    b.HasKey("RoleId");
+                    b.HasKey("RoleId")
+                        .HasName("PK_ROLES");
 
                     b.HasIndex("RoleName")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_ROLES_role_name");
 
-                    b.ToTable("Roles", (string)null);
+                    b.ToTable("ROLES", (string)null);
 
                     b.HasData(
                         new
@@ -218,57 +254,63 @@ namespace RaceDay_Api.Migrations
                 {
                     b.Property<int>("UserId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
+                        .HasColumnType("datetime")
+                        .HasColumnName("created_at")
                         .HasDefaultValueSql("GETDATE()");
 
                     b.Property<DateTime?>("DateOfBirth")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("date")
+                        .HasColumnName("date_of_birth");
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
+                        .HasColumnType("varchar(150)")
+                        .HasColumnName("email");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("first_name");
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("last_name");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("password_hash");
 
                     b.Property<string>("PhoneNumber")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("varchar(20)")
+                        .HasColumnName("phone_number");
 
                     b.Property<string>("ProfileImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("profile_image_url");
 
                     b.Property<int>("RoleId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("role_id");
 
-                    b.HasKey("UserId");
+                    b.HasKey("UserId")
+                        .HasName("PK_USERS");
 
                     b.HasIndex("Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("UQ_USERS_email");
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("USERS", (string)null);
                 });
 
             modelBuilder.Entity("RaceDay.Api.Models.Category", b =>
@@ -277,7 +319,8 @@ namespace RaceDay_Api.Migrations
                         .WithMany("Categories")
                         .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_CATEGORIES_EVENTS");
 
                     b.Navigation("Event");
                 });
@@ -288,19 +331,22 @@ namespace RaceDay_Api.Migrations
                         .WithMany("Enrolments")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_ENROLMENTS_CATEGORIES");
 
                     b.HasOne("RaceDay.Api.Models.Event", "Event")
                         .WithMany("Enrolments")
                         .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_ENROLMENTS_EVENTS");
 
                     b.HasOne("RaceDay.Api.Models.User", "User")
                         .WithMany("Enrolments")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_ENROLMENTS_USERS");
 
                     b.Navigation("Category");
 
@@ -315,7 +361,8 @@ namespace RaceDay_Api.Migrations
                         .WithMany("OrganisedEvents")
                         .HasForeignKey("OrganiserId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_EVENTS_USERS");
 
                     b.Navigation("Organiser");
                 });
@@ -325,8 +372,9 @@ namespace RaceDay_Api.Migrations
                     b.HasOne("RaceDay.Api.Models.Enrolment", "Enrolment")
                         .WithOne("Result")
                         .HasForeignKey("RaceDay.Api.Models.Result", "EnrolmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_RESULTS_ENROLMENTS");
 
                     b.Navigation("Enrolment");
                 });
@@ -337,7 +385,8 @@ namespace RaceDay_Api.Migrations
                         .WithMany("Users")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_USERS_ROLES");
 
                     b.Navigation("Role");
                 });

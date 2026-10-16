@@ -21,8 +21,14 @@ namespace RaceDay.Api.Controllers
             _password = password;
         }
 
-        // POST /api/auth/register
+        /// <summary>Registers a new user with the chosen role (Organiser or Participant).</summary>
+        /// <response code="201">Registration successful. Returns the new user's summary.</response>
+        /// <response code="400">Validation failed or the role is not Organiser/Participant.</response>
+        /// <response code="409">Email is already registered.</response>
         [HttpPost("register")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> Register(RegisterDto dto)
         {
             if (await _db.Users.AnyAsync(u => u.Email == dto.Email))
@@ -58,8 +64,12 @@ namespace RaceDay.Api.Controllers
             });
         }
 
-        // POST /api/auth/login
+        /// <summary>Authenticates credentials and starts a server-side session.</summary>
+        /// <response code="200">Login successful. Returns the logged-in user's summary.</response>
+        /// <response code="401">Invalid credentials.</response>
         [HttpPost("login")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Login(LoginDto dto)
         {
             var user = await _db.Users
@@ -80,8 +90,8 @@ namespace RaceDay.Api.Controllers
                 Role = user.Role.RoleName
             });
         }
-
-        // POST /api/auth/logout
+        /// <summary>Ends the current session so the user is no longer authenticated.</summary>
+        /// <response code="200">Session ended.</response>
         [HttpPost("logout")]
         [SessionAuthorize]
         public IActionResult Logout()
