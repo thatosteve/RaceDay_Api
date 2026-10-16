@@ -1,0 +1,102 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using RaceDay.Api.Auth;
+using RaceDay.Api.Data;
+using RaceDay.Api.DTOs;
+using RaceDay.Api.Models;
+
+namespace RaceDay.Api.Controllers
+{
+    [ApiController]
+    public class EnrolmentsController : ControllerBase
+    {
+        private readonly AppDbContext _db;
+        public EnrolmentsController(AppDbContext db) => _db = db;
+
+        private int CurrentUserId => HttpContext.Session.GetInt32("UserId")!.Value;
+
+        // POST /api/events/{eventId}/enrolments
+        [HttpPost("api/events/{eventId:int}/enrolments")]
+        [RoleAuthorize("Participant")]
+        public async Task<IActionResult> Enrol(int eventId, EnrolmentCreateDto dto)
+        {
+            if (!await _db.Events.AnyAsync(e => e.EventId == eventId))
+                return NotFound(new { message = "Event does not exist." });
+
+            var category = await _db.Categories
+                .FirstOrDefaultAsync(c => c.CategoryId == dto.CategoryId && c.EventId == eventId);
+
+            if (category == null)
+                return BadRequest(new { message = "Invalid category for this event." });
+
+            if (await _db.Enrolments.AnyAsync(e => e.UserId == CurrentUserId && e.EventId == eventId))
+                return Conflict(new { message = "Already enrolled for this event." });
+
+            var enrolment = new Enrolment
+            {
+                UserId = CurrentUserId,
+                EventId = eventId,
+                CategoryId = dto.CategoryId,
+                Status = "Pending"
+            };
+
+            _db.Enrolments.Add(enrolment);
+            await _db.SaveChangesAsync();
+            return StatusCode(201, enrolment);
+        }
+
+        // GET /api/enrolments/me
+        [HttpGet("api/enrolments/me")]
+        [RoleAuthorize("Participant")]
+        public async Task<IActionResult> MyEnrolments()
+        {
+            var list = await _db.Enrolments
+                .Include(e => e.Event)
+                .Include(e => e.Category)
+                .Include(e => e.Result)
+                .Where(e => e.UserId == CurrentUserId)
+                .ToListAsync();
+
+            return Ok(list);
+        }
+
+        // GET /api/events/{eventId}/enrolments
+        [HttpGet("api/events/{eventId:int}/enrolments")]
+        [RoleAuthorize("Organiser")]
+        public async Task<IActionResult> EventEnrolments(int eventId)
+        {
+            var ev = await _db.Events.FirstOrDefaultAsync(e => e.EventId == eventId);
+            if (ev == null) return NotFound();
+            if (ev.OrganiserId != CurrentUserId) return Forbid();
+
+            var list = await _db.Enrolments
+                .Include(e => e.User)
+                .Include(e => e.Category)
+                .Include(e => e.Result)
+                .Where(e => e.EventId == eventId)
+                .ToListAsync();
+
+            return Ok(list);
+        }
+
+        // PUT /api/enrolments/{id}/status
+        [HttpPut("api/enrolments/{id:int}/status")]
+        [RoleAuthorize("Organiser")]
+        public async Task<IActionResult> UpdateStatus(int id, EnrolmentStatusUpdateDto dto)
+        {
+            if (dto.Status != "Pending" && dto.Status != "Confirmed")
+                return BadRequest(new { message = "Status must be Pending or Confirmed." });
+
+            var enrolment = await _db.Enrolments
+                .Include(e => e.Event)
+                .FirstOrDefaultAsync(e => e.EnrolmentId == id);
+
+            if (enrolment == null) return NotFound();
+            if (enrolment.Event.OrganiserId != CurrentUserId) return Forbid();
+
+            enrolment.Status = dto.Status;
+            await _db.SaveChangesAsync();
+            return Ok(enrolment);
+        }
+    }
+}
