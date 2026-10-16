@@ -241,6 +241,7 @@ Workflow: `.github/workflows/dotnet.yml` (restore, build, and test on every push
 ## Video walkthrough
 
 **YouTube (unlisted):** 
+https://youtu.be/OMAWLUNDShA
 
 ## AI usage disclosure
 
