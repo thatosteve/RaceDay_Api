@@ -24,6 +24,7 @@
     <Folder Include="Controllers\" />
     <Folder Include="Modesl\" />
     <Folder Include="Data\" />
+    <Folder Include="DTOs\" />
   </ItemGroup>
 
 </Project>
