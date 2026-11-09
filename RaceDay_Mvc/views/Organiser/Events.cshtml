@@ -1,0 +1,41 @@
+@model List<OrganiserEventDto>
+@{ ViewData["Title"] = "My events"; }
+<div class="container">
+    <div class="page-head d-flex justify-content-between align-items-end flex-wrap gap-2">
+        <div><h1>My events</h1><p>Edit details, manage categories, view enrolments and capture results.</p></div>
+        <a class="btn btn-rd" asp-action="CreateEvent">Create event</a>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="empty"><h3>No events yet.</h3><a class="btn btn-rd mt-2" asp-action="CreateEvent">Create your first event</a></div>
+    }
+    else
+    {
+        <div class="table-wrap">
+        <table class="rd-table">
+            <thead><tr><th></th><th>Event</th><th>Date</th><th>Categories</th><th>Enrolments</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var e in Model.OrderBy(x => x.EventDate))
+            {
+                <tr>
+                    <td>@if (!string.IsNullOrEmpty(e.BannerImageUrl)) { <img class="thumb" src="@e.BannerImageUrl" alt="" /> } else { <div class="thumb"></div> }</td>
+                    <td><strong>@e.Name</strong><div class="muted small">@e.Location. @Format.Km(e.DistanceKm), @Format.TypeLabel(e.EventType)</div></td>
+                    <td>@Format.DateAt(e.EventDate)</td>
+                    <td>@e.CategoryCount</td>
+                    <td>@e.EnrolmentCount</td>
+                    <td class="text-end text-nowrap">
+                        <a class="btn btn-quiet btn-sm" asp-action="EditEvent" asp-route-id="@e.EventId">Edit</a>
+                        <a class="btn btn-quiet btn-sm" asp-action="Categories" asp-route-id="@e.EventId">Categories</a>
+                        <a class="btn btn-quiet btn-sm" asp-action="Enrolments" asp-route-id="@e.EventId">Enrolments</a>
+                        <a class="btn btn-quiet btn-sm" asp-action="Results" asp-route-id="@e.EventId">Results</a>
+                        <form asp-action="DeleteEvent" asp-route-id="@e.EventId" method="post" class="d-inline" onsubmit="return confirm('Delete this event, its categories, enrolments and results? This cannot be undone.');">
+                            <button type="submit" class="btn btn-quiet btn-sm btn-danger-quiet">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        </div>
+    }
+</div>

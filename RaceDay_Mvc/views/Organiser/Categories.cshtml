@@ -1,0 +1,43 @@
+@model EventDto
+@{ ViewData["Title"] = "Categories"; }
+<div class="container">
+    <div class="page-head">
+        <a asp-action="Events" class="small">Back to my events</a>
+        <h1 class="mt-2">Categories for @Model.Name</h1>
+        <p>Participants pick one when they enter, for example Under 20, Senior, 10km or 21km.</p>
+    </div>
+    <div class="row g-4">
+        <div class="col-lg-7">
+            @if (Model.Categories == null || Model.Categories.Count == 0)
+            {
+                <div class="empty"><h3>No categories yet.</h3><p class="muted mb-0">Add at least one so people can enter.</p></div>
+            }
+            else
+            {
+                @foreach (var c in Model.Categories)
+                {
+                    <div class="row-card">
+                        <div class="grow"><strong>@c.Name</strong><span class="cat-type">@c.CategoryType category</span></div>
+                        <form asp-action="DeleteCategory" asp-route-id="@Model.EventId" method="post" onsubmit="return confirm('Remove this category?');">
+                            <input type="hidden" name="categoryId" value="@c.CategoryId" />
+                            <button type="submit" class="btn btn-quiet btn-danger-quiet">Remove</button>
+                        </form>
+                    </div>
+                }
+            }
+        </div>
+        <div class="col-lg-5">
+            <div class="panel">
+                <h2 class="mb-3">Add a category</h2>
+                <form asp-action="AddCategory" asp-route-id="@Model.EventId" method="post">
+                    <div class="mb-3"><label class="form-label" for="name">Name</label><input class="form-control" id="name" name="name" maxlength="100" required placeholder="e.g. Under 20" /></div>
+                    <div class="mb-3">
+                        <label class="form-label" for="categoryType">Type</label>
+                        <select class="form-select" id="categoryType" name="categoryType"><option value="Age">Age</option><option value="Distance">Distance</option></select>
+                    </div>
+                    <button type="submit" class="btn btn-rd w-100">Add category</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

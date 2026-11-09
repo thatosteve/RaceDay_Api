@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      # The solution contains the API, the MVC app (Part 3) and the xUnit tests
+      - name: Restore
+        run: dotnet restore RaceDay_Api.sln
+
+      - name: Build API + MVC
+        run: dotnet build RaceDay_Api.sln --no-restore -c Release
+
+      - name: Run unit tests
+        run: dotnet test RaceDay_Api.sln --no-build -c Release --verbosity normal
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build MVC Docker image
+        run: docker build -t raceday-mvc ./RaceDay_Mvc
+

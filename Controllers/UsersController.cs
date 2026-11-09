@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Auth;
 using RaceDay.Api.Data;
 using RaceDay.Api.DTOs;
+using RaceDay.Api.Services;
 
 namespace RaceDay.Api.Controllers
 {
@@ -12,7 +13,8 @@ namespace RaceDay.Api.Controllers
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _db;
-        public UsersController(AppDbContext db) => _db = db;
+        private readonly IBlobService _blob;
+        public UsersController(AppDbContext db, IBlobService blob) { _db = db; _blob = blob; }
 
         private int CurrentUserId => HttpContext.Session.GetInt32("UserId")!.Value;
 
@@ -56,13 +58,23 @@ namespace RaceDay.Api.Controllers
             return Ok(new { message = "Profile updated." });
         }
 
-        // POST /api/users/me/profile-image  -- placeholder for Part 3 (Azure Blob)
+        // POST /api/users/me/profile-image  (multipart/form-data, field name "file")
+    
         [HttpPost("me/profile-image")]
         [RoleAuthorize("Participant")]
-        public IActionResult UploadProfileImage()
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadProfileImage(IFormFile file)
         {
-            // Part 3 will implement Azure Blob upload here.
-            return Ok(new { message = "Profile image endpoint reserved for Part 3." });
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == CurrentUserId);
+            if (user == null) return Unauthorized();
+
+            try
+            {
+                user.ProfileImageUrl = await _blob.UploadImageAsync(file, "profiles");
+                await _db.SaveChangesAsync();
+                return Ok(new { url = user.ProfileImageUrl });
+            }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
         }
     }
 }

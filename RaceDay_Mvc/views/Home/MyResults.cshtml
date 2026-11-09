@@ -1,0 +1,40 @@
+@model List<MyResultDto>
+@{ ViewData["Title"] = "My results"; }
+<div class="container">
+    <div class="page-head">
+        <h1>My results</h1>
+        <p>Your race history. Results appear here once the organiser has captured them.</p>
+    </div>
+    @if (!Model.Any())
+    {
+        <div class="empty">
+            <h3>No results yet.</h3>
+            <p class="muted mb-3">After a race you've entered, your time and position will show up here.</p>
+            <a class="btn btn-line" asp-action="MyEvents">See my entries</a>
+        </div>
+    }
+    else
+    {
+        <div class="scoreboard mb-4">
+            <div><div class="score-num">@Model.Count</div><div class="score-label">@(Model.Count == 1 ? "race finished" : "races finished")</div></div>
+            <div><div class="score-num">@Model.Min(r => r.FinishPosition)</div><div class="score-label">best finishing position</div></div>
+        </div>
+        @foreach (var r in Model)
+        {
+            <div class="row-card">
+                <div class="bib-date">
+                    <div class="bib-day">@r.EventDate.ToString("dd")</div>
+                    <div class="bib-month">@r.EventDate.ToString("MMM yy")</div>
+                </div>
+                <div class="grow">
+                    <h3 class="mb-1">@r.EventName</h3>
+                    <div class="muted">@Format.Date(r.EventDate). Category: <strong>@r.Category</strong></div>
+                </div>
+                <div class="text-end">
+                    <div class="result-time">@Format.Time(r.FinishTime)</div>
+                    <div class="fw-bold">@Format.Position(r.FinishPosition, r.TotalFinishers)</div>
+                </div>
+            </div>
+        }
+    }
+</div>

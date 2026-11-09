@@ -93,6 +93,7 @@ namespace RaceDay.Api.Controllers
                     ParticipantEmail = e.User.Email,
                     e.CategoryId,
                     CategoryName = e.Category.Name,
+                    ResultId = e.Result != null ? e.Result.ResultId : (int?)null,
                     FinishTime = e.Result != null ? e.Result.FinishTime : null,
                     FinishPosition = e.Result != null ? e.Result.FinishPosition : null
                 })

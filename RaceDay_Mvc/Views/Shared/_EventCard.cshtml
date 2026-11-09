@@ -1,0 +1,26 @@
+@model EventDto
+@{
+    var enrolled = (bool)(ViewData["enrolled"] ?? false);
+    var bg = string.IsNullOrEmpty(Model.BannerImageUrl) ? "" : $"background-image:url('{Model.BannerImageUrl}')";
+}
+<article class="bib">
+    <div class="bib-banner type-@Model.EventType @(string.IsNullOrEmpty(Model.BannerImageUrl) ? "nopic" : "")" style="@bg">
+        <span class="bib-type">@Format.TypeLabel(Model.EventType)</span>
+    </div>
+    <div class="bib-body">
+        <div class="bib-date">
+            <div class="bib-day">@Model.EventDate.ToString("dd")</div>
+            <div class="bib-month">@Model.EventDate.ToString("MMM")</div>
+        </div>
+        <div>
+            <h3 class="bib-title"><a asp-controller="Home" asp-action="Details" asp-route-id="@Model.EventId">@Model.Name</a></h3>
+            <p class="bib-meta">@Model.Location</p>
+            <p class="bib-meta">@Format.Km(Model.DistanceKm), starts @Model.EventDate.ToString("HH:mm")</p>
+        </div>
+    </div>
+    <div class="bib-foot">
+        @if (enrolled) { <span class="status status-confirmed">You're entered</span> }
+        else { <span class="muted small">@(Model.Categories?.Count ?? 0) categories</span> }
+        <a class="btn btn-line btn-sm" asp-controller="Home" asp-action="Details" asp-route-id="@Model.EventId">View event</a>
+    </div>
+</article>
