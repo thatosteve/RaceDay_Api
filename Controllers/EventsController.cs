@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using RaceDay.Api.Auth;
 using RaceDay.Api.Data;
 using RaceDay.Api.DTOs;
+using RaceDay.Api.Services;
 using RaceDay.Api.Models;
 
 namespace RaceDay.Api.Controllers
@@ -12,7 +13,8 @@ namespace RaceDay.Api.Controllers
     public class EventsController : ControllerBase
     {
         private readonly AppDbContext _db;
-        public EventsController(AppDbContext db) => _db = db;
+        private readonly IBlobService _blob;
+        public EventsController(AppDbContext db, IBlobService blob) { _db = db; _blob = blob; }
 
         private int CurrentUserId => HttpContext.Session.GetInt32("UserId")!.Value;
 
@@ -33,6 +35,34 @@ namespace RaceDay.Api.Controllers
 
             var events = await query.OrderBy(e => e.EventDate).ToListAsync();
             return Ok(events);
+        }
+
+        // GET /api/events/mine
+        /// <summary>Lists the logged-in Organiser's own events with category, enrolment and result counts (used by the dashboard).</summary>
+        [HttpGet("mine")]
+        [RoleAuthorize("Organiser")]
+        public async Task<IActionResult> Mine()
+        {
+            var userId = CurrentUserId;
+            var list = await _db.Events
+                .Where(e => e.OrganiserId == userId)
+                .OrderBy(e => e.EventDate)
+                .Select(e => new
+                {
+                    e.EventId,
+                    e.Name,
+                    e.Description,
+                    e.EventDate,
+                    e.Location,
+                    e.DistanceKm,
+                    e.EventType,
+                    e.BannerImageUrl,
+                    CategoryCount = e.Categories.Count(),
+                    EnrolmentCount = e.Enrolments.Count(),
+                    ResultCount = e.Enrolments.Count(en => en.Result != null)
+                })
+                .ToListAsync();
+            return Ok(list);
         }
 
         // GET /api/events/{id}
@@ -118,17 +148,28 @@ namespace RaceDay.Api.Controllers
             return NoContent();
         }
 
-        // POST /api/events/{id}/banner  -- placeholder for Part 3 (Azure Blob)
+        // POST /api/events/{id}/banner  (multipart/form-data, field name "file")
+        /// <summary>Uploads a banner image for an event owned by the logged-in Organiser and stores it in Azure Blob Storage.</summary>
+        /// <response code="200">Returns the stored image URL.</response>
+        /// <response code="400">Missing file, wrong type (JPG/PNG/WEBP only) or larger than 5 MB.</response>
+        /// <response code="403">The event belongs to another Organiser.</response>
+        /// <response code="404">Event not found.</response>
         [HttpPost("{id:int}/banner")]
         [RoleAuthorize("Organiser")]
-        public async Task<IActionResult> UploadBanner(int id)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadBanner(int id, IFormFile file)
         {
             var ev = await _db.Events.FirstOrDefaultAsync(e => e.EventId == id);
-            if (ev == null) return NotFound();
+            if (ev == null) return NotFound(new { message = "Event not found." });
             if (ev.OrganiserId != CurrentUserId) return StatusCode(403, new { message = "You do not own this resource." });
 
-            // Part 3 will implement Azure Blob upload here.
-            return Ok(new { message = "Banner endpoint reserved for Part 3." });
+            try
+            {
+                ev.BannerImageUrl = await _blob.UploadImageAsync(file, "banners");
+                await _db.SaveChangesAsync();
+                return Ok(new { url = ev.BannerImageUrl });
+            }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
         }
     }
 }
