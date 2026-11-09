@@ -9,6 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Azure.Storage.Blobs" Version="12.30.1" />
 		<PackageReference Include="BCrypt.Net-Next" Version="4.2.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
 			<PrivateAssets>all</PrivateAssets>
@@ -31,6 +32,13 @@
 		<Content Remove="RaceDay_Testing/**" />
 		<EmbeddedResource Remove="RaceDay_Testing/**" />
 		<None Remove="RaceDay_Testing/**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Remove="RaceDay_Mvc\**" />
+		<Content Remove="RaceDay_Mvc\**" />
+		<EmbeddedResource Remove="RaceDay_Mvc\**" />
+		<None Remove="RaceDay_Mvc\**" />
 	</ItemGroup>
 
 </Project>
