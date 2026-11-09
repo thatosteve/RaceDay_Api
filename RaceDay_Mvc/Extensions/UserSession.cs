@@ -1,6 +1,6 @@
 namespace RaceDay.Mvc.Extensions
 {
-    public static class SessionExtensions
+    public static class UserSession
     {
         public const string UserIdKey = "UserId";
         public const string RoleKey = "Role";

@@ -57,7 +57,7 @@ namespace RaceDay.Mvc.Services
         private async Task<ApiResult<T>> SendAsync<T>(HttpRequestMessage req)
         {
             var session = _ctx.HttpContext!.Session;
-            var cookie = session.GetString(SessionExtensions.ApiCookieKey);
+            var cookie = session.GetString(UserSession.ApiCookieKey);
             if (!string.IsNullOrEmpty(cookie))
                 req.Headers.TryAddWithoutValidation("Cookie", cookie);
 
@@ -69,7 +69,7 @@ namespace RaceDay.Mvc.Services
                 {
                     var apiCookie = cookies.FirstOrDefault(c => c.StartsWith(".RaceDay.Session="));
                     if (apiCookie != null)
-                        session.SetString(SessionExtensions.ApiCookieKey, apiCookie.Split(';')[0]);
+                        session.SetString(UserSession.ApiCookieKey, apiCookie.Split(';')[0]);
                 }
 
                 var body = await res.Content.ReadAsStringAsync();

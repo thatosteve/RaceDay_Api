@@ -49,7 +49,7 @@ namespace RaceDay.Mvc.Controllers
                 return View(vm);
             }
 
-            HttpContext.Session.SetString(SessionExtensions.NameKey, $"{vm.FirstName} {vm.LastName}");
+            HttpContext.Session.SetString(UserSession.NameKey, $"{vm.FirstName} {vm.LastName}");
             Flash(true, "Profile updated.", null);
             return RedirectToAction(nameof(Index));
         }

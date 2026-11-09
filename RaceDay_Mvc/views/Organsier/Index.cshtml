@@ -3,7 +3,7 @@
     ViewData["Title"] = "Dashboard";
     var upcoming = Model.Where(e => e.EventDate >= DateTime.Today).OrderBy(e => e.EventDate).ToList();
     var next = upcoming.FirstOrDefault();
-    var first = (Context.Session.GetString(SessionExtensions.NameKey) ?? "").Split(' ').FirstOrDefault();
+    var first = (Context.Session.GetString(UserSession.NameKey) ?? "").Split(' ').FirstOrDefault();
 }
 <div class="container">
     <div class="page-head d-flex justify-content-between align-items-end flex-wrap gap-2">
