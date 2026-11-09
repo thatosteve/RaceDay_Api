@@ -1,8 +1,57 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+@model HomeIndexViewModel
+@{ ViewData["Title"] = "Find events"; }
+<section class="hero">
+    <div class="container">
+        <h1>Find your next start line.</h1>
+        <p>Road runs, walks and cycle tours from across South Africa. Pick a category, enter in a minute, and we'll keep your results.</p>
+    </div>
+</section>
+<div class="container">
+    <form method="get" asp-action="Index" class="panel filters">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label" for="type">Event type</label>
+                <select class="form-select" id="type" name="type">
+                    <option value="">All types</option>
+                    <option value="run" selected="@(Model.Type == "run")">Run</option>
+                    <option value="walk" selected="@(Model.Type == "walk")">Walk</option>
+                    <option value="cycle" selected="@(Model.Type == "cycle")">Cycle</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="search">Name or place</label>
+                <input class="form-control" id="search" name="search" value="@Model.Search" placeholder="e.g. Durban" />
+            </div>
+            <div class="col-md-2"><label class="form-label" for="from">From</label><input type="date" class="form-control" id="from" name="from" value="@(Model.From?.ToString("yyyy-MM-dd"))" /></div>
+            <div class="col-md-2"><label class="form-label" for="to">To</label><input type="date" class="form-control" id="to" name="to" value="@(Model.To?.ToString("yyyy-MM-dd"))" /></div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-rd flex-grow-1">Show events</button>
+                <a class="btn btn-quiet" asp-action="Index">Reset</a>
+            </div>
+        </div>
+    </form>
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <div class="d-flex justify-content-between align-items-end my-4">
+        <h2 class="mb-0">@Model.Events.Count upcoming @(Model.Events.Count == 1 ? "event" : "events")</h2>
+    </div>
+
+    @if (!Model.Events.Any())
+    {
+        <div class="empty">
+            <h3>No events match those filters.</h3>
+            <p class="muted mb-3">Try a different type or widen the dates.</p>
+            <a class="btn btn-line" asp-action="Index">Clear filters</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var e in Model.Events)
+            {
+                <div class="col-md-6 col-lg-4">
+                    @await Html.PartialAsync("_EventCard", e, new ViewDataDictionary(ViewData) { { "enrolled", Model.EnrolledEventIds.Contains(e.EventId) } })
+                </div>
+            }
+        </div>
+    }
 </div>
