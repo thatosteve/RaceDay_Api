@@ -300,7 +300,8 @@ Open http://localhost:8080. Stop it with `docker rm -f raceday-mvc`.
 
 Workflow: `.github/workflows/dotnet.yml` restores and builds the whole solution (API + MVC), runs the unit tests, and builds the MVC Docker image on every push.
 
-**CI screenshot:** _(paste the green build screenshot here)_
+<img width="1920" height="1008" alt="Screenshot 2026-11-09 184108" src="https://github.com/user-attachments/assets/4c6bf665-e6aa-4b94-9607-0ccc35317e2c" />
+
 
 ---
 
