@@ -1,6 +1,6 @@
 @{
     var role = Context.Session.GetRole();
-    var fullName = Context.Session.GetString(SessionExtensions.NameKey);
+    var fullName = Context.Session.GetString(UserSession.NameKey);
     var ctrl = ViewContext.RouteData.Values["controller"]?.ToString();
     var act = ViewContext.RouteData.Values["action"]?.ToString();
     string On(string c, string a) => (ctrl == c && act == a) ? "active" : "";

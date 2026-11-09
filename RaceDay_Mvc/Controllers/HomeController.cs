@@ -13,6 +13,7 @@ namespace RaceDay.Mvc.Controllers
         [RoleAuthorize("Participant")]
         public async Task<IActionResult> Index(string? type, string? search, DateTime? from, DateTime? to)
         {
+            if (Role == "Organiser") return RedirectToAction("Index", "Organiser");
             var url = string.IsNullOrWhiteSpace(type) ? "api/events" : $"api/events?type={Uri.EscapeDataString(type)}";
             var events = await Api.GetAsync<List<EventDto>>(url);
             if (events.StatusCode == 401) return SessionExpired();
