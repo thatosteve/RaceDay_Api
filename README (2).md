@@ -308,10 +308,8 @@ Workflow: `.github/workflows/dotnet.yml` restores and builds the whole solution 
 ## Video walkthroughs
 
 | Part | YouTube (unlisted) |
-|---|---|
-| Part 1 – Planning and database | _(paste link here)_ |
-| Part 2 – RESTful API | _(paste link here)_ |
-| Part 3 – MVC, Blob Storage and Docker | _(paste link here)_ |
+
+| Part 3 – MVC, Blob Storage and Docker |(https://youtu.be/xFkRCyyM2M0) |
 
 ## AI usage disclosure
 
