@@ -24,10 +24,10 @@ var apiBase = builder.Configuration["ApiBaseUrl"]
     ?? throw new InvalidOperationException("ApiBaseUrl is not configured.");
 
 builder.Services.AddHttpClient<ApiClient>(c =>
-{
-    c.BaseAddress = new Uri(apiBase.TrimEnd('/') + "/");
-    c.Timeout = TimeSpan.FromSeconds(30);
-})
+    {
+        c.BaseAddress = new Uri(apiBase.TrimEnd('/') + "/");
+        c.Timeout = TimeSpan.FromSeconds(30);
+    })
     // UseCookies=false: each user's API cookie is forwarded by ApiClient, so users never share a cookie jar.
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
     {
