@@ -1,7 +1,7 @@
 # RaceDay – Event Management System
 
 **Module:** PROG6212 Programming 2B
-**POE:** Parts 1 and 2 – Planning, Database, and RESTful API
+**POE:** Parts 1, 2 and 3 – Planning, RESTful API, MVC Web Application, Azure Blob Storage and Docker
 
 ---
 
@@ -9,18 +9,18 @@
 
 RaceDay is a web-based event management system for the South African road running, walking, and cycling community. It lets Event Organisers create and manage events, categories, and participant results, while Participants browse upcoming events, enter events by choosing a category, and track their personal performance history.
 
-- **Part 1** contains the planning artefacts (ERD, API endpoint plan, SQL script).
-- **Part 2** contains the RESTful API built to that plan.
-- **Part 3** will add the MVC front end and containerisation.
+- **Part 1** – planning artefacts (ERD, API endpoint plan, SQL script) in `/docs`.
+- **Part 2** – the RESTful API built to that plan, with session authentication, Swagger and unit tests.
+- **Part 3** – the ASP.NET Core MVC front end that consumes the API, Azure Blob Storage for images (through the API), and a Dockerfile for the MVC app.
 
 ---
 
 ## User Roles
 
-- **Organiser** – creates, edits, and deletes their own events; adds Age/Distance categories to those events; views all enrolments for their events; updates enrolment status; captures and updates participant results.
-- **Participant** – creates an account, browses events, enters an event by selecting a category, views their own enrolments, and tracks their personal results.
+- **Organiser** – creates, edits, and deletes their own events (with a banner image); adds Age/Distance categories to those events; views all enrolments for their events; updates enrolment status; captures and updates participant results.
+- **Participant** – creates an account, browses and filters events, enters an event by selecting a category, views their own enrolments and status, tracks their personal results, and manages their profile (including a profile picture).
 
-Role-based access is enforced at the API level in Part 2 and will be reflected in the MVC interface in Part 3.
+Role-based access is enforced at the API level (Part 2) and reflected in the MVC interface (Part 3), where each role has its own navigation and pages.
 
 ---
 
@@ -33,9 +33,15 @@ RaceDay_Api/                   ASP.NET Core 8 Web API
   Data/                        AppDbContext (Code-First)
   DTOs/                        Request objects
   Models/                      Entity classes
-  Services/                    IPasswordService / PasswordService
+  Services/                    PasswordService, BlobService (Azure Blob Storage)
   Auth/                        SessionAuthorize, RoleAuthorize
   Migrations/
+RaceDay_Mvc/                   ASP.NET Core 8 MVC front end (Part 3)
+  Controllers/                 Account, Home, Organiser, Profile
+  Services/                    ApiClient (all calls to the API)
+  Filters/                     RoleAuthorize (MVC role guard)
+  Models/ Views/ wwwroot/
+  Dockerfile
 RaceDay_Testing/               xUnit test project
 docs/
   erd.png
@@ -60,7 +66,7 @@ Key design decisions:
 - `roles` is a lookup table referenced by `users`, keeping role handling normalised.
 - `enrolments` is the junction table resolving the many-to-many relationship between Participants and Events. It carries the chosen `category_id` and the enrolment `status` (Pending / Confirmed).
 - `results` links to `enrolment_id` (one-to-one), so a result inherits the participant, event, and category from its enrolment without duplicating data.
-- `profile_image_url` and `banner_image_url` are planned now for the Azure Blob Storage integration in Part 3.
+- `profile_image_url` and `banner_image_url` were planned in Part 1 and are populated in Part 3 from Azure Blob Storage.
 
 ## SQL Script
 
@@ -88,7 +94,7 @@ Part 2 adds the ASP.NET Core 8 Web API that powers RaceDay. It is built with **E
 - xUnit tests covering authentication, role enforcement, events, and enrolments.
 - A GitHub Actions workflow that restores, builds, and runs the tests on every push.
 
-## Setup and run
+## Setup and run (API)
 
 1. Install the **.NET 8 SDK** and **SQL Server** (LocalDB, Express, or full SQL Server).
 2. Open `RaceDay_Api.sln` in **Visual Studio 2022**.
@@ -118,7 +124,7 @@ Part 2 adds the ASP.NET Core 8 Web API that powers RaceDay. It is built with **E
 2. `POST /api/auth/login` – log in. The browser stores the session cookie, so you can then try any protected endpoint from the same Swagger page.
 3. To switch roles, call `POST /api/auth/logout` first and log in as the other user (or open a fresh browser profile).
 
-> The placeholder password hashes in the Part 1 seed data are not real BCrypt hashes, so those seeded users cannot log in. Register new users through the API instead.
+> The placeholder password hashes in the Part 1 seed data are not real BCrypt hashes, so those seeded users cannot log in. Register new users through the API or the MVC register page instead.
 
 ## Endpoint summary
 
@@ -134,17 +140,18 @@ Part 2 adds the ASP.NET Core 8 Web API that powers RaceDay. It is built with **E
 |---|---|---|
 | GET | `/api/users/me` | Any |
 | PUT | `/api/users/me` | Any |
-| POST | `/api/users/me/profile-image` | Participant (placeholder – Azure Blob in Part 3) |
+| POST | `/api/users/me/profile-image` | Participant – uploads to Azure Blob Storage (Part 3) |
 
 ### Events (`EventsController`)
 | Method | Route | Role |
 |---|---|---|
 | GET | `/api/events` (optional `?type=` and `?date=`) | Any logged-in user |
+| GET | `/api/events/mine` | Organiser – events created by the logged-in Organiser (Part 3, dashboard) |
 | GET | `/api/events/{id}` | Any logged-in user |
 | POST | `/api/events` | Organiser |
 | PUT | `/api/events/{id}` | Organiser (owner) |
 | DELETE | `/api/events/{id}` | Organiser (owner) |
-| POST | `/api/events/{id}/banner` | Organiser (owner) – placeholder, Azure Blob in Part 3 |
+| POST | `/api/events/{id}/banner` | Organiser (owner) – uploads to Azure Blob Storage (Part 3) |
 
 ### Categories (`CategoriesController`)
 | Method | Route | Role |
@@ -179,6 +186,7 @@ Part 2 adds the ASP.NET Core 8 Web API that powers RaceDay. It is built with **E
 | Category type is not `Age` or `Distance` | 400 Bad Request |
 | Enrolling with a category that does not belong to the event | 400 Bad Request |
 | Enrolment status is not `Pending` or `Confirmed` | 400 Bad Request |
+| Image is missing, over 5 MB, or not JPG/PNG/WEBP | 400 Bad Request |
 | Enrolling twice for the same event | 409 Conflict |
 | Capturing a second result for the same enrolment | 409 Conflict |
 | Deleting a category that has enrolments | 409 Conflict |
@@ -193,7 +201,6 @@ Part 2 adds the ASP.NET Core 8 Web API that powers RaceDay. It is built with **E
 - Ownership checks run inside each controller, so an Organiser can only modify resources that belong to their own events.
 - `PasswordService.Verify` returns `false` for malformed hashes instead of throwing, so placeholder seed rows cause a failed login rather than a 500.
 - Endpoints that list enrolments return projections rather than entities, so password hashes are never sent to the client.
-- CORS is configured for the Part 3 MVC client (`https://localhost:7001` for now, to be updated with the real URL).
 
 ## Schema fidelity
 
@@ -215,13 +222,14 @@ The only difference in object type is that the SQL script uses `UNIQUE` constrai
 |---|---|
 | `DELETE /api/categories/{id}` returns 409 if enrolments exist | The foreign key from `ENROLMENTS` is NO ACTION, so the delete would otherwise fail at the database level. 409 gives the client a clear reason. |
 | `DELETE /api/events/{id}` removes the event's results, enrolments, and categories first | Foreign keys are RESTRICT, so the API removes dependants in the correct order (results, enrolments, categories, event). |
-| `POST /api/users/me/profile-image` and `POST /api/events/{id}/banner` are placeholders | Azure Blob Storage is added in Part 3. The endpoints and role rules are already in place, so Part 3 only adds the storage implementation. |
 | `POST /api/auth/register` also starts a session | Convenience: new users are logged in immediately. `POST /api/auth/login` still works as planned. |
 | `POST /api/events/{eventId}/enrolments` takes `{ categoryId }` | The event id comes from the route, so it is not repeated in the body. |
+| `GET /api/events/mine` added (Part 3) | The Organiser dashboard needs only the events the logged-in Organiser created. |
+| `ResultId` added to the Organiser enrolments list; `TotalFinishers` added to `GET /api/results/me` (Part 3) | The results entry page needs to know whether a result already exists, and "My Results" shows positions such as "47th out of 312 finishers". |
 
 ## Unit tests
 
-`RaceDay_Testing` boots the real API in memory using `WebApplicationFactory<Program>` with the EF Core InMemory provider, and explicitly seeds the two roles (InMemory does not apply `HasData` reliably). The API runs in a `Testing` environment, where HTTPS redirection is switched off so tests can use plain HTTP.
+`RaceDay_Testing` boots the real API in memory using `WebApplicationFactory<Program>` with the EF Core InMemory provider, and explicitly seeds the two roles (InMemory does not apply `HasData` reliably). The API runs in a `Testing` environment, where HTTPS redirection is switched off so tests can use plain HTTP. No test contacts Azure: `BlobService` creates its client lazily, so the API starts without Azure credentials.
 
 | File | What it covers |
 |---|---|
@@ -230,16 +238,80 @@ The only difference in object type is that the SQL script uses `UNIQUE` constrai
 | `EventsTests.cs` | Organiser can create an event (201); invalid event type returns 400; logged-in user can list events; Organiser cannot update another Organiser's event (403) |
 | `EnrolmentsTests.cs` | Participant can enrol (201); duplicate enrolment returns 409; Organiser cannot enrol as a Participant (403); Organiser can view enrolments for their own event |
 
+---
+
+# Part 3 – MVC Web Application, Azure Blob Storage and Docker
+
+Part 3 adds `RaceDay_Mvc`, an ASP.NET Core 8 MVC front end that consumes the Part 2 API. The MVC project has **no database access and no duplicated business logic**: every read and write goes through `ApiClient`, and **all file uploads go through the API**, which stores images in Azure Blob Storage. The MVC app never talks to Azure.
+
+## What Part 3 adds
+
+- `RaceDay_Mvc/` project: role-aware navigation, Organiser and Participant interfaces, RaceDay theme (Bootstrap + custom CSS).
+- `ApiClient` forwards the API's session cookie, so the API remains the single authority for authentication and roles.
+- `[RoleAuthorize]` filter in MVC: not logged in → login page; wrong role → access denied page.
+- API changes: real Azure Blob upload for event banners and profile pictures, `GET /api/events/mine` for the dashboard, `ResultId` on the Organiser enrolments list, and `TotalFinishers` on `GET /api/results/me`.
+- A Dockerfile for the MVC app and an updated GitHub Actions workflow that builds API + MVC, runs tests, and builds the Docker image.
+
+## Pages
+
+| Role | Pages |
+|---|---|
+| Organiser | Dashboard, My events (create / edit / delete with banner upload), Categories, Enrolments (confirm / set pending), Results entry, Profile |
+| Participant | Find events (filters), Event details + Enter event, My entries (colour-coded status), My results (time + position, e.g. "47th out of 312 finishers"), Profile with picture upload |
+
+## Azure Blob Storage
+
+- The API (`BlobService`) uploads images to a Blob container with public read access for blobs, and saves the resulting URL in `events.banner_image_url` / `users.profile_image_url`.
+- Images must be JPG, PNG or WEBP and 5 MB or smaller.
+- The container (default name `raceday-images`, override with `AzureBlob:ContainerName`) is created automatically on first upload if it does not exist.
+- The connection string is **never committed**. It is stored in user secrets locally, or in an environment variable in other environments.
+
+## Setup and run (full application, local)
+
+**Prerequisites:** .NET 8 SDK, SQL Server (LocalDB/Express), Visual Studio 2022, an Azure Storage account, and Docker Desktop (for the container).
+
+1. Set up the database as described in "Setup and run (API)" above (`Update-Database`).
+2. Store the Azure connection string (never commit it):
+   ```
+   dotnet user-secrets set "AzureBlob:ConnectionString" "<connection string>" --project RaceDay_Api
+   ```
+3. Set `ApiBaseUrl` in `RaceDay_Mvc/appsettings.json` to the API's HTTPS address (for example `https://localhost:7123`).
+4. In Visual Studio: **Solution → Configure Startup Projects → Multiple startup projects** and start both `RaceDay_Api` and `RaceDay_Mvc`.
+5. Register an Organiser and a Participant on the MVC register page to try each role.
+
+## Running the MVC app in Docker
+
+The container hosts only the MVC app. The API still runs on your machine (with SQL Server and Azure reachable from it). Start the API listening on all interfaces over plain HTTP:
+
+```
+dotnet run --project RaceDay_Api --urls "http://0.0.0.0:5080"
+```
+
+Build and run the MVC container:
+
+```
+docker build -t raceday-mvc ./RaceDay_Mvc
+docker run -d --name raceday-mvc -p 8080:8080 --add-host=host.docker.internal:host-gateway -e ApiBaseUrl=http://host.docker.internal:5080 raceday-mvc
+```
+
+Open http://localhost:8080. Stop it with `docker rm -f raceday-mvc`.
+
 ## CI/CD
 
-Workflow: `.github/workflows/dotnet.yml` (restore, build, and test on every push).
+Workflow: `.github/workflows/dotnet.yml` restores and builds the whole solution (API + MVC), runs the unit tests, and builds the MVC Docker image on every push.
 
-**CI screenshot:** _add your green build screenshot here._
+**CI screenshot:** _(paste the green build screenshot here)_
 
-## Video walkthrough
+---
 
-**YouTube (unlisted):** 
+## Video walkthroughs
+
+| Part | YouTube (unlisted) |
+|---|---|
+| Part 1 – Planning and database | _(paste link here)_ |
+| Part 2 – RESTful API | _(paste link here)_ |
+| Part 3 – MVC, Blob Storage and Docker | _(paste link here)_ |
 
 ## AI usage disclosure
 
-AI assistance was used to help scaffold and debug the API, tests, and documentation. I reviewed, ran, and understand the code, and I explain its structure and design decisions in the video.
+AI assistance was used to help scaffold and debug the API, MVC application, tests, Dockerfile and documentation. I reviewed, ran, and understand the code, and I explain its structure and design decisions in the videos.
